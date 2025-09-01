@@ -269,3 +269,204 @@ begin
     );
 end;
 
+
+
+Kotlin:
+
+MainActivity.kt:
+
+package com.example.asiignment2
+
+import android.os.Bundle
+import android.widget.Button
+import android.widget.EditText
+import android.widget.TextView
+import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+
+data class student(
+    var rollNo: Int,
+    var name: String,
+    var marks1: Int,
+    var marks2: Int,
+    var marks3: Int
+) {
+    var total: Int = 0
+    var percentage: Double = 0.0
+    var grade: String = ""
+
+    fun calculate() {
+        total = marks1 + marks2 + marks3
+        percentage = total / 3.0
+
+        grade = when {
+            percentage >= 90 -> "A+"
+            percentage >= 80 -> "A"
+            percentage >= 70 -> "B"
+            percentage >= 60 -> "C"
+            percentage >= 50 -> "D"
+            else -> "F"
+        }
+    }
+}
+class MainActivity : AppCompatActivity() {
+    private val students = mutableListOf<student>()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        setContentView(R.layout.activity_main)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+
+        val etRollNo: EditText = findViewById(R.id.etRollNo)
+        val etName: EditText = findViewById(R.id.etName)
+        val etMarks1: EditText = findViewById(R.id.etMarks1)
+        val etMarks2: EditText = findViewById(R.id.etMarks2)
+        val etMarks3: EditText = findViewById(R.id.etMarks3)
+        val btnAddStudent:Button = findViewById(R.id.btnAddStudent)
+        val btnShowStudent:Button = findViewById(R.id.btnShowStudent)
+        val btnShowTopStudent:Button = findViewById(R.id.btnShowTopStudent)
+        val tvOutput:TextView = findViewById(R.id.tvOutput)
+
+        btnAddStudent.setOnClickListener {
+            val rollNo = etRollNo.text.toString().toIntOrNull() ?: 0
+            val name = etName.text.toString()
+            val marks1 = etMarks1.text.toString().toIntOrNull() ?: 0
+            val marks2 = etMarks2.text.toString().toIntOrNull() ?: 0
+            val marks3 = etMarks3.text.toString().toIntOrNull() ?: 0
+
+            val student = student(rollNo, name, marks1, marks2, marks3)
+            student.calculate()
+            students.add(student)
+
+            tvOutput.text = "Added..."
+
+            etRollNo.text.clear()
+            etName.text.clear()
+            etMarks1.text.clear()
+            etMarks2.text.clear()
+            etMarks3.text.clear()
+        }
+
+        btnShowTopStudent.setOnClickListener {
+            val topStudent = students.maxByOrNull { it.total }
+            if (topStudent != null) {
+                tvOutput.text = "Top Student:\nRoll No: ${topStudent.rollNo}, Name: ${topStudent.name}, Total: ${topStudent.total}, Percentage: ${"%.2f".format(topStudent.percentage)}, Grade: ${topStudent.grade}"
+            } else {
+                tvOutput.text = "No student data available"
+            }
+        }
+
+        btnShowStudent.setOnClickListener {
+            if (students.isEmpty()) {
+                tvOutput.text = "No student data available"
+            } else {
+                var data = ""
+                for (s in students) {
+                    data += "Roll No: ${s.rollNo}, Name: ${s.name}, Marks: ${s.marks1}, ${s.marks2}, ${s.marks3}, " +
+                            "Total: ${s.total}, Percentage: ${"%.2f".format(s.percentage)}, Grade: ${s.grade}\n"
+                }
+                tvOutput.text = data
+            }
+        }
+    }
+}
+
+
+
+xml:
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:layout_margin="30dp"
+    android:orientation="vertical">
+
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/container"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <EditText
+            android:id="@+id/etRollNo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Roll Number"
+            android:inputType="number"/>
+
+        <EditText
+            android:id="@+id/etName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Name"
+            android:inputType="textPersonName"/>
+
+        <EditText
+            android:id="@+id/etMarks1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Marks Subject 1"
+            android:inputType="number"/>
+
+        <EditText
+            android:id="@+id/etMarks2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Marks Subject 2"
+            android:inputType="number"/>
+
+        <EditText
+            android:id="@+id/etMarks3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Marks Subject 3"
+            android:inputType="number"/>
+
+        <Button
+            android:id="@+id/btnAddStudent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add Student"/>
+
+        <Button
+            android:id="@+id/btnShowStudent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show All Student"
+            android:layout_marginTop="8dp"/>
+
+        <Button
+            android:id="@+id/btnShowTopStudent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show 1st Rank Student"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:id="@+id/tvOutput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:paddingTop="16dp"/>
+
+    </LinearLayout>
+
+</ScrollView>
+
+</LinearLayout>
