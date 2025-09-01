@@ -1,0 +1,271 @@
+//  11) Create a stored procedure that will take ZoneName as an input and display list of patient who are not discharged 
+// yet.
+//  SpNotDischargedbyZoneName(‘ATHWA’);
+
+create or replace procedure SpNotDischargedbyZoneName(zname zone.zonename%type)
+as 
+begin
+    for rec in (
+        select p.patientid, p.patientname, c.categoryname, w.wardname, z.zonename, p.admitteddate 
+        from patient p, patientcategory c, ward w, zone z
+        where p.categoryid=c.categoryid and p.wardid=w.wardid and w.zoneid=z.zoneid and z.zonename=zname
+    )
+    loop
+        dbms_output.put_line('PatientID: '   || rec.patientid ||
+                             ', Name: '      || rec.patientname ||
+                             ', CategoryName: ' || rec.categoryname ||
+                             ', Ward: '      || rec.wardname ||
+                             ', Zone: '      || rec.zonename ||
+                             ', Admitted: '  || TO_CHAR(rec.admitteddate,'DD-MON-YYYY'));
+    end loop;
+end;
+
+
+begin
+SpNotDischargedbyZoneName('ATHWA'); 
+end;
+
+
+//  12) Create a stored procedure that will take ZoneName and Admitted Date as an input and display list of patient who
+//  are not discharged yet.
+//  SpNotDischargedbyZNandDate(‘ATHWA’, 01-06-2024);
+
+create or replace procedure spnotdischargedbyznanddate(
+    p_zonename in varchar2,
+    p_admitteddate in date
+)
+as
+begin
+    for rec in (
+        select 
+            p.patientid,
+            p.patientname,
+            p.categoryid,
+            p.wardid,
+            p.admitteddate,
+            p.dischargedate,
+            z.zonename
+        from 
+            patient p
+        join 
+            ward w on p.wardid = w.wardid
+        join 
+            zone z on w.zoneid = z.zoneid
+        where 
+            z.zonename = p_zonename
+            and trunc(p.admitteddate) = trunc(p_admitteddate)
+            and p.dischargedate is null
+    )
+    loop
+        dbms_output.put_line(
+            'id: ' || rec.patientid || 
+            ', name: ' || rec.patientname || 
+            ', ward: ' || rec.wardid || 
+            ', admitted: ' || to_char(rec.admitteddate, 'dd-mm-yyyy')
+        );
+    end loop;
+end;
+
+begin
+  SpNotDischargedbyZNandDate('ATHWA', '02-AUG-25');
+end;
+
+//  13) Create a stored procedure that will take WardName as an input and display list of patient whe are not discharged 
+// yet.
+//  SpNotDischargedbyWardName(‘GHOD DOD’)
+
+create or replace procedure spnotdischargedbywardname(
+    p_wardname in varchar2
+)
+as
+begin
+    for rec in (
+        select 
+            p.patientid,
+            p.patientname,
+            p.categoryid,
+            p.wardid,
+            p.admitteddate,
+            p.dischargedate,
+            w.wardname
+        from 
+            patient p
+        join 
+            ward w on p.wardid = w.wardid
+        where 
+            w.wardname = p_wardname
+            and p.dischargedate is null
+    )
+    loop
+        dbms_output.put_line(
+            'id: ' || rec.patientid || 
+            ', name: ' || rec.patientname || 
+            ', ward: ' || rec.wardid || 
+            ', admitted: ' || to_char(rec.admitteddate, 'dd-mm-yyyy')
+        );
+    end loop;
+end;
+
+begin
+  spnotdischargedbywardname('BHATAR');
+end;
+
+
+4:
+
+
+create table booksubject (
+    booksub_id number primary key,
+    booksubject_name varchar2(50)
+);
+
+create table author (
+    author_id number primary key,
+    author_name varchar2(50)
+);
+
+create table book (
+    book_id number primary key,
+    book_name varchar2(50),
+    book_price number(10,2),
+    book_qty number,
+    discount_amt number(10,2),
+    netprice number(10,2),
+    booksub_id number,
+    author_id number,
+    purchasedate date,
+    foreign key (booksub_id) references booksubject(booksub_id),
+    foreign key (author_id) references author(author_id)
+);
+
+
+insert all
+    into booksubject(booksub_id, booksubject_name) values(1,'science')
+    into booksubject(booksub_id, booksubject_name) values(2,'literature')
+    into booksubject(booksub_id, booksubject_name) values(3,'history')
+select * from dual;
+
+
+insert all
+    into author(author_id, author_name) values(1,'jk rowling')
+    into author(author_id, author_name) values(2,'isaac asimov')
+    into author(author_id, author_name) values(3,'stephen king')
+select * from dual;
+
+
+insert all
+    into book(book_id, book_name, book_price, book_qty, discount_amt, netprice, booksub_id, author_id, purchasedate) 
+        values(1,'harry potter',500,10,50,450,2,1,to_date('10-jan-2020','dd-mm-yyyy'))
+    into book(book_id, book_name, book_price, book_qty, discount_amt, netprice, booksub_id, author_id, purchasedate) 
+        values(2,'foundation',600,5,60,540,1,2,to_date('05-feb-2020','dd-mm-yyyy'))
+    into book(book_id, book_name, book_price, book_qty, discount_amt, netprice, booksub_id, author_id, purchasedate) 
+        values(3,'it',700,3,70,630,2,3,to_date('15-mar-2020','dd-mm-yyyy'))
+    into book(book_id, book_name, book_price, book_qty, discount_amt, netprice, booksub_id, author_id, purchasedate) 
+        values(4,'science basics',400,8,40,360,1,2,to_date('20-aug-2020','dd-mm-yyyy'))
+    into book(book_id, book_name, book_price, book_qty, discount_amt, netprice, booksub_id, author_id, purchasedate) 
+        values(5,'literature guide',450,6,45,405,2,1,to_date('01-oct-2020','dd-mm-yyyy'))
+select * from dual;
+
+
+1.
+create or replace procedure sp_most_expensive_book
+as
+begin
+    for rec in (
+        select *
+        from book
+        where netprice = (select max(netprice) from book)
+    )
+    loop
+        dbms_output.put_line(
+            'id: ' || rec.book_id || 
+            ', name: ' || rec.book_name || 
+            ', price: ' || rec.book_price || 
+            ', netprice: ' || rec.netprice
+        );
+    end loop;
+end;
+
+
+begin
+sp_most_expensive_book;
+end;
+
+
+
+2.
+create or replace procedure sp_count_books_by_subject(
+    p_booksub_name in varchar2
+)
+as
+    v_count number;
+begin
+    select count(*)
+    into v_count
+    from book b
+    join booksubject bs on b.booksub_id = bs.booksub_id
+    where bs.booksubject_name = p_booksub_name;
+
+    dbms_output.put_line('total books for subject "' || p_booksub_name || '" = ' || v_count);
+end;
+
+
+begin
+sp_count_books_by_subject('literature');
+end;
+
+3.
+create or replace procedure sp_books_by_author(
+    p_author_name in varchar2
+)
+as
+begin
+    for rec in (
+        select b.book_id, b.book_name, b.netprice
+        from book b
+        join author a on b.author_id = a.author_id
+        where a.author_name = p_author_name
+    )
+    loop
+        dbms_output.put_line(
+            'id: ' || rec.book_id || 
+            ', name: ' || rec.book_name || 
+            ', netprice: ' || rec.netprice
+        );
+    end loop;
+end;
+
+begin
+sp_books_by_author('jk rowling');
+end;
+
+
+4.
+create or replace procedure sp_total_amount_by_duration(
+    p_start_date in date,
+    p_end_date in date
+)
+as
+    v_total number;
+begin
+    select sum(netprice)
+    into v_total
+    from book
+    where purchasedate between p_start_date and p_end_date;
+
+    dbms_output.put_line(
+        'total amount of books purchased between ' || 
+        to_char(p_start_date,'dd-mm-yyyy') || ' and ' || 
+        to_char(p_end_date,'dd-mm-yyyy') || ' = ' || v_total
+    );
+end;
+
+
+
+begin
+    sp_total_amount_by_duration(
+        to_date('01-01-2020','dd-mm-yyyy'),
+        to_date('15-10-2020','dd-mm-yyyy')
+    );
+end;
+

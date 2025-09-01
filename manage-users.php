@@ -1,63 +1,55 @@
-<?php
-$conn = mysqli_connect("localhost", "root", "", "unit4_practice");
+<?php    
+    require "mysqlConnect.php";
 
-$editMode = false;
-$editData = [
-    'userid' => '',
-    'name' => '',
-    'email' => '',
-    'password' => '',
-    'role' => '',
-    'isblocked' => '',
-    'createdat' => ''
-];
+    $editData = [
+            'userid' => '',
+            'name' => '',
+            'email' => '',
+            'password' => '',
+            'role' => '',
+            'isblocked' => '',
+            'createdat' => ''
+        ];
+    $editing=false;
 
-// Handle Edit
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['edit'])) {
-    $id = $_POST['action_id'];
-    $sql = "SELECT * FROM users WHERE userid = $id";
-    $res = mysqli_query($conn, $sql);
-    $user = mysqli_fetch_assoc($res);
-    if ($user) {
-        $editMode = true;
-        $editData = $user;
-    }
-}
 
-// Handle Delete
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['delete'])) {
-    $id = $_POST['action_id'];
-    $sql = "DELETE FROM users WHERE userid = $id";
-    mysqli_query($conn, $sql);
-    header("Location: " . $_SERVER['PHP_SELF']); 
-    exit();
-}
+    //inserting:
 
-// Handle Submit (Insert or Update)
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['submit'])) {
-    $name = $_POST['uname'];
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-    $role = $_POST['role'] ?? 'Customer';
-    $isBlocked = isset($_POST['blocked']) ? 1 : 0;
-    $date = $_POST['date'];
+    if($_SERVER['REQUEST_METHOD']==="POST" && isset($_POST['submit'])) {
+        $name=$_POST['uname'];
+        $email=$_POST['email'];
+        $password=$_POST['password'];
+        $role='Customer';
+        $isblocked= (isset($_POST['blocked']))?1:0;
+        $createdat=$_POST['date'];
 
-    if (!empty($_POST['edit_userid'])) {
-        // Update
-        $id = $_POST['edit_userid'];
-        $sql = "UPDATE users SET name='$name', email='$email', password='$password', role='$role', isblocked='$isBlocked', createdat='$date' WHERE userid=$id";
-        mysqli_query($conn, $sql);
-    } else {
-        // Insert
-        $sql = "INSERT INTO users (name, email, password, role, isblocked, createdat)
-                VALUES ('$name', '$email', '$password', '$role', '$isBlocked', '$date')";
-        mysqli_query($conn, $sql);
+        //TODO: Validation;
+            $insertQuery="insert into users(name, email, password, role, isblocked, createdat) 
+                          values('$name', '$email', '$password', '$role', '$isblocked', '$createdat')";
+            mysqli_query($connection, $insertQuery);
+            header("Location:". $_SERVER['PHP_SELF']);
     }
 
-    header("Location: " . $_SERVER['PHP_SELF']); 
-    exit();
-}
-?>
+    if($_SERVER['REQUEST_METHOD']==="POST" && isset($_POST['delete'])) {
+        $id=$_POST['id'];
+        $deleteQuery="delete from users where userid=$id";
+        mysqli_query($connection, $deleteQuery);
+        header("Location:". $_SERVER['PHP_SELF']);
+    }
+    
+    if($_SERVER['REQUEST_METHOD']==="POST" && isset($_POST['edit'])) {
+        $id=$_POST['id'];
+        $rec=mysqli_query($connection, "select * from users where userid=$id");
+        $data=mysqli_fetch_assoc($rec);
+        if($data) {
+            $editData=$data;
+            $editing=true;
+        }
+        
+    echo $editData['name'];
+        print_r($editData);
+    }
+    ?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -65,104 +57,88 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['submit'])) {
     <meta charset="UTF-8">
     <title>User Management</title>
     <style>
-        table, th, td {
-            border: 1px solid;
+        table, td, th{
+            border: 3px solid black;
             border-collapse: collapse;
+            margin: 20px;
             text-align: center;
-            margin: 30px;
-            padding: 10px;
+            padding: 15px;
         }
         th {
-            background: black;
-            color: white;
+            background: gray;
+            color: white; 
         }
         button {
-            margin: 4px;
             cursor: pointer;
+            margin: 5px;
+            padding: auto;
         }
-        #delete {
-            background: red;
-            color: white;
-        }
-        #edit {
-            background: blue;
-            color: white;
-        }
+
     </style>
 </head>
 <body>
     <h3>User Manipulation:</h3>
     <form method="post">
-        <input type="hidden" name="edit_userid" value="<?= $editMode ? $editData['userid'] : '' ?>">
 
         <label>Name of User:</label>
-        <input type="text" name="uname" value="<?= $editData['name'] ?>"><br><br>
+        <input type="text" name="uname" value=<?php echo $editData['name'] ?>><br><br>
 
         <label>Email:</label>
-        <input type="text" name="email" value="<?= $editData['email'] ?>"><br><br>
+        <input type="text" name="email" value=<?php echo $editData['email'] ?>><br><br>
 
         <label>Password:</label>
-        <input type="text" name="password" value="<?= $editData['password'] ?>"><br><br>
+        <input type="text" name="password" value=<?php echo $editData['password'] ?>><br><br>
 
-        <label>Role:</label>
-        <input type="radio" name="role" value="Customer" <?= $editData['role'] === 'Customer' ? 'checked' : '' ?>>Customer
-        <input type="radio" name="role" value="Admin" <?= $editData['role'] === 'Admin' ? 'checked' : '' ?>>Admin<br><br>
+        <!-- <label>Role:</label>
+        <input type="radio" name="role">Customer
+        <input type="radio" name="role">Admin<br><br> -->
 
         <label>Blocked:</label>
-        <input type="checkbox" name="blocked" <?= $editData['isblocked'] ? 'checked' : '' ?>><br><br>
+        <input type="checkbox" name="blocked" checked=<?php $editData['isblocked'] ?>><br><br>
 
         <label>Date:</label>
-        <input type="date" name="date" value="<?= $editData['createdat'] ?>"><br><br>
+        <input type="date" name="date" value=<?php echo $editData['createdat'] ?>><br><br>
 
-        <button type="submit" name="submit"><?= $editMode ? "Update" : "Submit" ?></button>
+        <button type="submit" name="submit">Submit</button>
     </form>
 
-    <?php
-    // Display Users
-    $sql = "SELECT * FROM users";
-    $res = mysqli_query($conn, $sql);
-    $records = mysqli_fetch_all($res, MYSQLI_ASSOC);
+    <table>
+        <tr>
+            <th>Sr No</th>
+            <th>User Id</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Password</th>
+            <th>role</th>
+            <th>Is Blocked</th>
+            <th>Created At</th>
+            <th>Actions</th>
+        </tr>
+<?php
 
-    if (!empty($records)) {
-        echo "<table>
-            <tr>
-                <th>SrNo</th>
-                <th>UserId</th>
-                <th>UserName</th>
-                <th>Email</th>
-                <th>Password</th>
-                <th>Role</th>
-                <th>IsBlocked</th>
-                <th>CreatedAt</th>
-                <th>Action</th>
-            </tr>";
-
-        $i = 1;
-        foreach ($records as $rec) {
-            echo "<tr>
-                <td>{$i}</td>
-                <td>{$rec['userid']}</td>
-                <td>{$rec['name']}</td>
-                <td>{$rec['email']}</td>
-                <td>{$rec['password']}</td>
-                <td>{$rec['role']}</td>
-                <td>{$rec['isblocked']}</td>
-                <td>{$rec['createdat']}</td>
-                <td>
-                    <form method='post'>
-                        <input type='hidden' name='action_id' value='{$rec['userid']}'>
-                        <button type='submit' name='edit' id='edit'>Edit</button>
-                        <button type='submit' name='delete' id='delete'>Delete</button>
-                    </form>
-                </td>
-            </tr>";
-            $i++;
-        }
-
-        echo "</table>";
-    } else {
-        echo "<p>No Data Available</p>";
+    $sql="select userid, name, email, password, role, isblocked, createdat from users";
+    $result=mysqli_query($connection, $sql);
+    $data=mysqli_fetch_all($result, MYSQLI_ASSOC);
+    // print_r($data);
+    
+    $i=1;
+    foreach($data as $row) {
+        echo "<tr>";
+            echo "<td>{$i}</td>";
+            echo "<td>{$row['userid']}</td>";
+            echo "<td>{$row['name']}</td>";
+            echo "<td>{$row['email']}</td>";
+            echo "<td>{$row['password']}</td>";
+            echo "<td>{$row['role']}</td>";
+            echo "<td>{$row['isblocked']}</td>";
+            echo "<td>{$row['createdat']}</td>";
+            echo "<td> <form method='post'><input type='hidden' name='id' value='{$row['userid']}'><button type='submit' name='edit' style='color: white;background: navy'>Edit</button><button type='submit' name='delete' style='color: white;background: darkred'>Remove</button></form></td>";
+        echo "</tr>";
+        $i++;
     }
-    ?>
+
+    echo "</table>";
+?>
+
 </body>
 </html>
